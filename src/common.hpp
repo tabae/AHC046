@@ -50,6 +50,7 @@ pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char
             int nj = j + dj;
             if(ni < 0 || ni >= n || nj < 0 || nj >= n) {
                 cerr << "Out of bounds: (" << ni << ", " << nj << ")" << endl;
+                cerr << "(i, j) = " << i << ", " << j << endl;
                 exit(1);
             }
             if(is_block[ni][nj]) {
