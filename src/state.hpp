@@ -129,9 +129,8 @@ State State::generateState(const State& input_state) {
 
     res.operations.clear();
     auto [i, j] = goals[0];
+    vector is_block(n, vector<bool>(n, false));
     for(int goal = 1; goal < m; ++goal) {        
-        vector is_block(n, vector<bool>(n, false));
-        auto _cleanup = common::exec_operations(goals[0].first, goals[0].second, res.operations, is_block, true, used_block);
         auto [gi, gj] = goals[goal];
         int min_ops = 1<<30;
         vector<pair<char,char>> best_ops;
@@ -146,15 +145,16 @@ State State::generateState(const State& input_state) {
                         int org_j = j;
 
                         i = i + delta_i;
-                        if(i < 0 || i >= n) {
+                        j = j + delta_j;
+                        if(i < 0 || i >= n || j < 0 || j >= n) {
                             i = org_i;
                             j = org_j;
                             continue;
                         }
 
                         vector<pair<char, char>> ops;
-
-                        // move to i
+                        
+                        // move to i, j
                         {
                             int ti = org_i, tj = org_j;
                             while(ti != i) {
@@ -172,38 +172,15 @@ State State::generateState(const State& input_state) {
                                     --ti;
                                 }
                             }
-                            i = ti;
-                            j = tj;
-                        }
-                        if(dir_j != 'X') {
-                            int nj = org_j + common::dij(dir_j).second;
-                            if(nj >= 0 && nj < n) {
-                                ops.push_back({'S', dir_j});
-                            }
-                        }
-                        auto my_is_block = is_block;
-                        // move to j
-                        {
-                            auto [ti, tj] = common::exec_operations(org_i, org_j, ops, my_is_block, true, used_block);
-                            i = ti;
-                            j = tj;
-                            
-                            j = tj + delta_j;
-                            if(j < 0 || j >= n) {
-                                i = org_i;
-                                j = org_j;
-                                continue;
-                            }
-                            
                             while(tj != j) {
                                 if(tj < j) {
-                                    if(my_is_block[ti][tj+1]) {
+                                    if(is_block[ti][tj+1]) {
                                         ops.push_back({'A', 'R'});
                                     }
                                     ops.push_back({'M', 'R'});
                                     ++tj;
                                 } else if(tj > j) {
-                                    if(my_is_block[ti][tj-1]) {
+                                    if(is_block[ti][tj-1]) {
                                         ops.push_back({'A', 'L'});
                                     }
                                     ops.push_back({'M', 'L'});
@@ -211,24 +188,31 @@ State State::generateState(const State& input_state) {
                                 }
                             }     
                         }
+                        
                         if(dir_i != 'X') {
                             int ni = i + common::dij(dir_i).first;
                             if(ni >= 0 && ni < n) {
                                 ops.push_back({'S', dir_i});
                             }
                         }
-                        my_is_block = is_block;
-                        auto [ti, tj] = common::exec_operations(org_i, org_j, ops, my_is_block, true, used_block);
+                        if(dir_j != 'X') {
+                            int nj = j + common::dij(dir_j).second;
+                            if(nj >= 0 && nj < n) {
+                                ops.push_back({'S', dir_j});
+                            }
+                        }
+                        vector<pair<int,int>> _used_block;
+                        auto [ti, tj] = common::exec_operations(org_i, org_j, ops, is_block, false, _used_block);
 
                         while(ti != gi) {
                             if(ti < gi) {
-                                if(my_is_block[ti+1][tj]) {
+                                if(is_block[ti+1][tj]) {
                                     ops.push_back({'A', 'D'});
                                 }
                                 ops.push_back({'M', 'D'});
                                 ++ti;
                             } else if(ti > gi) {
-                                if(my_is_block[ti-1][tj]) {
+                                if(is_block[ti-1][tj]) {
                                     ops.push_back({'A', 'U'});
                                 }
                                 ops.push_back({'M', 'U'});
@@ -237,13 +221,13 @@ State State::generateState(const State& input_state) {
                         }
                         while(tj != gj) {
                             if(tj < gj) {
-                                if(my_is_block[ti][tj+1]) {
+                                if(is_block[ti][tj+1]) {
                                     ops.push_back({'A', 'R'});
                                 }
                                 ops.push_back({'M', 'R'});
                                 ++tj;
                             } else if(tj > gj) {
-                                if(my_is_block[ti][tj-1]) {
+                                if(is_block[ti][tj-1]) {
                                     ops.push_back({'A', 'L'});
                                 }
                                 ops.push_back({'M', 'L'});
@@ -280,6 +264,15 @@ State State::generateState(const State& input_state) {
             res.operations.push_back(op);
         }
 
+        /*
+        for(int i = 0; i < n; ++i) {
+            for(int j = 0; j < n; ++j) {
+                cerr << is_block[i][j] << " ";
+            }
+            cerr << endl;
+        }
+        cerr << "aaa" << endl;
+        */
         vector<pair<int,int>> _used_block;
         auto [si, sj] = goals[goal-1];
         tie(i, j) = common::exec_operations(si, sj, best_ops, is_block, true, _used_block);

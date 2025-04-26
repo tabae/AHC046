@@ -58,14 +58,7 @@ pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char
                 exit(1);
             }
             if(is_block[ni][nj]) {
-                cerr << "Executing operation: " << act << " " << dir << " (" << i << ", " << j << ")" << endl;
                 cerr << "Blocked cell: (" << ni << ", " << nj << ")" << endl;
-                for(int i = 0; i < n; ++i) {
-                    for(int j = 0; j < n; ++j) {
-                        cerr << is_block[i][j] << " ";
-                    }
-                    cerr << endl;
-                }
                 exit(1);
             }
             i = ni;
