@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <map>
 using namespace std;
 using ll = long long;
 
@@ -12,6 +13,7 @@ namespace common {
     vector<pair<int,int>> goals;
     void read();
     pair<int,int> dij(char dir);
+    pair<int,int> exec_operations(int, int, const vector<pair<char, char>>&, vector<vector<bool>>&, bool);
     inline ll calc_score(const vector<pair<char, char>>& operations);
 };
 
@@ -39,12 +41,8 @@ pair<int,int> common::dij(char dir) {
     }
 }
 
-inline ll common::calc_score(const vector<pair<char, char>>& operations) {
-    ll score = 0;
-    vector<vector<bool>> is_block(n, vector<bool>(n, false));
-    auto [i, j] = goals[0];
-    int goal_index = 1;
-    int visited = 1;
+pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char>>& operations, vector<vector<bool>>& is_block, bool change_is_block) {
+    map<pair<int, int>, int> is_block_org;
     for(auto [act, dir]: operations) {
         if(act == 'M') {
             auto [di, dj] = common::dij(dir);
@@ -82,8 +80,29 @@ inline ll common::calc_score(const vector<pair<char, char>>& operations) {
                 cerr << "Out of bounds: (" << ni << ", " << nj << ")" << endl;
                 exit(1);
             }
+            if(!change_is_block && !is_block_org.count({i, j})) {
+                is_block_org[{i, j}] = is_block[ni][nj];
+            }
             is_block[ni][nj] = !is_block[ni][nj];
         }
+    }
+    if(!change_is_block) {
+        for(auto [pos, val]: is_block_org) {
+            is_block[pos.first][pos.second] = val;
+        }
+    }
+    return {i, j};
+}
+
+
+inline ll common::calc_score(const vector<pair<char, char>>& operations) {
+    ll score = 0;
+    vector<vector<bool>> is_block(n, vector<bool>(n, false));
+    auto [i, j] = goals[0];
+    int goal_index = 1;
+    int visited = 1;
+    for(auto [act, dir]: operations) {
+        tie(i, j) = exec_operations(i, j, {{act, dir}}, is_block, true);
         if(goals[goal_index].first == i && goals[goal_index].second == j) {
             visited++;
             goal_index++;
