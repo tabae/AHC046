@@ -138,62 +138,119 @@ State State::generateState(const State& input_state) {
         string dirs_j = "LRX";
         for(char dir_i: dirs_i) {
             for(char dir_j: dirs_j) {
-                vector<pair<char, char>> ops;
-                if(dir_i != 'X') {
-                    int ni = i + common::dij(dir_i).first;
-                    if(ni >= 0 && ni < n) {
-                        ops.push_back({'S', dir_i});
-                    }
-                }
-                if(dir_j != 'X') {
-                    int nj = j + common::dij(dir_j).second;
-                    if(nj >= 0 && nj < n) {
-                        ops.push_back({'S', dir_j});
-                    }
-                }
-                vector<pair<int,int>> _used_block;
-                auto [ti, tj] = common::exec_operations(i, j, ops, is_block, false, _used_block);
+                for(int delta_i = -2; delta_i <= 2; ++delta_i) {
+                    for(int delta_j = -2; delta_j <= 2; ++delta_j) {
 
-                while(ti != gi) {
-                    if(ti < gi) {
-                        if(is_block[ti+1][tj]) {
-                            ops.push_back({'A', 'D'});
+                        int org_i = i;
+                        int org_j = j;
+
+                        i = i + delta_i;
+                        j = j + delta_j;
+                        if(i < 0 || i >= n || j < 0 || j >= n) {
+                            i = org_i;
+                            j = org_j;
+                            continue;
                         }
-                        ops.push_back({'M', 'D'});
-                        ++ti;
-                    } else if(ti > gi) {
-                        if(is_block[ti-1][tj]) {
-                            ops.push_back({'A', 'U'});
+
+                        vector<pair<char, char>> ops;
+                        
+                        // move to i, j
+                        {
+                            int ti = org_i, tj = org_j;
+                            while(ti != i) {
+                                if(ti < i) {
+                                    if(is_block[ti+1][tj]) {
+                                        ops.push_back({'A', 'D'});
+                                    }
+                                    ops.push_back({'M', 'D'});
+                                    ++ti;
+                                } else if(ti > i) {
+                                    if(is_block[ti-1][tj]) {
+                                        ops.push_back({'A', 'U'});
+                                    }
+                                    ops.push_back({'M', 'U'});
+                                    --ti;
+                                }
+                            }
+                            while(tj != j) {
+                                if(tj < j) {
+                                    if(is_block[ti][tj+1]) {
+                                        ops.push_back({'A', 'R'});
+                                    }
+                                    ops.push_back({'M', 'R'});
+                                    ++tj;
+                                } else if(tj > j) {
+                                    if(is_block[ti][tj-1]) {
+                                        ops.push_back({'A', 'L'});
+                                    }
+                                    ops.push_back({'M', 'L'});
+                                    --tj;
+                                }
+                            }     
                         }
-                        ops.push_back({'M', 'U'});
-                        --ti;
+                        
+                        if(dir_i != 'X') {
+                            int ni = i + common::dij(dir_i).first;
+                            if(ni >= 0 && ni < n) {
+                                ops.push_back({'S', dir_i});
+                            }
+                        }
+                        if(dir_j != 'X') {
+                            int nj = j + common::dij(dir_j).second;
+                            if(nj >= 0 && nj < n) {
+                                ops.push_back({'S', dir_j});
+                            }
+                        }
+                        vector<pair<int,int>> _used_block;
+                        auto [ti, tj] = common::exec_operations(org_i, org_j, ops, is_block, false, _used_block);
+
+                        while(ti != gi) {
+                            if(ti < gi) {
+                                if(is_block[ti+1][tj]) {
+                                    ops.push_back({'A', 'D'});
+                                }
+                                ops.push_back({'M', 'D'});
+                                ++ti;
+                            } else if(ti > gi) {
+                                if(is_block[ti-1][tj]) {
+                                    ops.push_back({'A', 'U'});
+                                }
+                                ops.push_back({'M', 'U'});
+                                --ti;
+                            }
+                        }
+                        while(tj != gj) {
+                            if(tj < gj) {
+                                if(is_block[ti][tj+1]) {
+                                    ops.push_back({'A', 'R'});
+                                }
+                                ops.push_back({'M', 'R'});
+                                ++tj;
+                            } else if(tj > gj) {
+                                if(is_block[ti][tj-1]) {
+                                    ops.push_back({'A', 'L'});
+                                }
+                                ops.push_back({'M', 'L'});
+                                --tj;
+                            }
+                        }     
+                        if(ops.size() < min_ops) {
+                            min_ops = ops.size();
+                            best_ops = ops;
+                        }
+
+                        i = org_i;
+                        j = org_j;
                     }
                 }
-                while(tj != gj) {
-                    if(tj < gj) {
-                        if(is_block[ti][tj+1]) {
-                            ops.push_back({'A', 'R'});
-                        }
-                        ops.push_back({'M', 'R'});
-                        ++tj;
-                    } else if(tj > gj) {
-                        if(is_block[ti][tj-1]) {
-                            ops.push_back({'A', 'L'});
-                        }
-                        ops.push_back({'M', 'L'});
-                        --tj;
-                    }
-                }     
-                if(ops.size() < min_ops) {
-                    min_ops = ops.size();
-                    best_ops = ops;
-                }
+
             }
         }
+
         i = gi;
         j = gj;
 
-        if(ryuka.pjudge(0.05)) {
+        if(ryuka.pjudge((float)1.0/goal)) {
             int d = ryuka.rand(4);
             string dirs = "LRUD";
             char dir = dirs[d];
@@ -207,7 +264,6 @@ State State::generateState(const State& input_state) {
             res.operations.push_back(op);
         }
 
-        // print block
         /*
         for(int i = 0; i < n; ++i) {
             for(int j = 0; j < n; ++j) {
@@ -220,7 +276,6 @@ State State::generateState(const State& input_state) {
         vector<pair<int,int>> _used_block;
         auto [si, sj] = goals[goal-1];
         tie(i, j) = common::exec_operations(si, sj, best_ops, is_block, true, _used_block);
-        //cerr << "bbb" << endl;
         assert (i == gi && j == gj);
     }   
 

@@ -123,7 +123,7 @@ inline ll common::calc_score(const vector<pair<char, char>>& operations) {
     } else {
         score = visited;
     }
-    cerr << "visited = " << visited << endl;
+    // cerr << "visited = " << visited << endl;
     return score;
 }
 
