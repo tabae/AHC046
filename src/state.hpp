@@ -193,41 +193,16 @@ State State::generateState(const State& input_state) {
         i = gi;
         j = gj;
 
-        for(char dir_i: dirs_i) {
-            if(dir_i == 'X') continue;
-            int ni = i + common::dij(dir_i).first;
-            int nj = j;
-            if(ni < 0 || ni >= n || is_block[ni][nj] ||
-            lower_bound(unused_block.begin(), unused_block.end(), make_pair(ni, nj)) != unused_block.end()) {
-                continue;
+        if(ryuka.pjudge(0.05)) {
+            int d = ryuka.rand(4);
+            string dirs = "LRUD";
+            char dir = dirs[d];
+            int ni = i + common::dij(dir).first;
+            int nj = j + common::dij(dir).second;
+            if(ni >= 0 && ni < n && nj >= 0 && nj < n) {
+                best_ops.push_back({'A', dir});
             }
-            bool ok = true;
-            for(int jj = 0; jj < n; jj++) {
-                for(int k = goal+1; k < m; k++) {
-                    if(ni == goals[k].first && jj == goals[k].second) {
-                        ok = false;
-                        break;
-                    }
-                }
-                if(!ok) break;
-            }
-            if(!ok) continue;
-            int i_start = dir_i == 'U' ? i+1 : i-1;
-            int i_delta = dir_i == 'U' ? 1 : -1;
-            for(int ii = i_start; 0 <= ii && ii < n; ii += i_delta) {
-                for(int k = goal+1; k < m; k++) {
-                    if(ii == goals[k].first && nj == goals[k].second) {
-                        ok = false;
-                        break;
-                    }
-                }
-                if(!ok) break;
-            }
-            if(!ok) continue;
-            best_ops.push_back({'A', dir_i});
-            break;
         }
-
         for(auto op: best_ops) {
             res.operations.push_back(op);
         }
