@@ -16,8 +16,13 @@ extern RandGenerator ryuka;
 struct State {
     static constexpr long long inf = 1LL<<60;
     long long score;
+    int block_num;
+    bool fix_block;
     vector<pair<char, char>> operations;
-    State() : score(-inf) {};
+    State() : score(-inf) {
+        block_num = 0;
+        fix_block = false;
+    };
     long long calc_score(const vector<pair<char, char>>& operations);
     void print();
     static State initState();
@@ -110,25 +115,11 @@ State State::initState() {
 }
 
 State State::generateState(const State& input_state) {
-    int num_blocks = ryuka.rand(30)+3;
+    int num_blocks = ryuka.rand(30);
     State res = input_state;
+    if(res.fix_block) num_blocks =  res.block_num;
+    res.block_num = num_blocks;
     vector<pair<int, int>> used_block, unused_block;
-    {
-        vector<vector<bool>> is_block(n, vector<bool>(n, false));
-        auto [gi, gj] = goals[0];
-        auto _ = common::exec_operations(gi, gj, res.operations, is_block, true, used_block);
-        for(int i = 0; i < n; ++i) {
-            for(int j = 0; j < n; ++j) {
-                if(!is_block[i][j]) continue;
-                if(lower_bound(used_block.begin(), used_block.end(), make_pair(i, j)) != used_block.end()) {
-                    ;
-                } else {
-                    unused_block.push_back({i, j});
-                }
-            }
-        }
-    } // get used_block
-
     res.operations.clear();
     auto [i, j] = goals[0];
     vector is_block(n, vector<bool>(n, false));
@@ -197,6 +188,7 @@ State State::generateState(const State& input_state) {
         j = gj;
 
         if(goal <= num_blocks) {
+            int block_count = 0;
             string dirs = "LRUD";
             shuffle(dirs.begin(), dirs.end(), ryuka.engine);
             for(char dir: dirs) {
@@ -212,6 +204,7 @@ State State::generateState(const State& input_state) {
                     }
                     if(!ok) continue;
                     best_ops.push_back({'A', dir});
+                    block_count++;
                     break;
                 }  
             }

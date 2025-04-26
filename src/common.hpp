@@ -72,7 +72,6 @@ pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char
                     break;
                 }
                 if(is_block[ni][nj]) {
-                    used_block.push_back({ni, nj});
                     break;
                 }
                 i = ni;
@@ -97,8 +96,6 @@ pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char
             is_block[pos.first][pos.second] = val;
         }
     }
-    sort(used_block.begin(), used_block.end());
-    used_block.erase(unique(used_block.begin(), used_block.end()), used_block.end());
     return {i, j};
 }
 
