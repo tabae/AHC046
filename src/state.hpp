@@ -109,6 +109,7 @@ State State::initState() {
 }
 
 State State::generateState(const State& input_state) {
+    int num_blocks = ryuka.rand(30)+3;
     State res = input_state;
     vector<pair<int, int>> used_block, unused_block;
     {
@@ -250,7 +251,7 @@ State State::generateState(const State& input_state) {
         i = gi;
         j = gj;
 
-        if(ryuka.pjudge((float)1.0/goal)) {
+        if(goal <= num_blocks) {
             int d = ryuka.rand(4);
             string dirs = "LRUD";
             char dir = dirs[d];
