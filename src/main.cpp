@@ -10,8 +10,10 @@ int main() {
     read();
 
     IterationControl<State> sera;
-    // State stat = sera.climb(1.8, State::initState());
-    State stat = State::initState();
+    State stat = sera.anneal(1.8, 100, 1, State::initState());
+    // State stat = sera.climb(0.5, State::initState());
+    // State stat = State::initState();
+    // State stat = State::generateState(State::initState());
 
     stat.print();
     cerr << "my score = " << stat.score << endl;

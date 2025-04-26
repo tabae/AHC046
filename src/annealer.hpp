@@ -44,12 +44,16 @@ STATE IterationControl<STATE>::anneal(double time_limit, double temp_start, doub
     start_time = toki.gettime();
     average_time = 0;
     STATE best_state = initial_state;
+    STATE answer_state = initial_state;
     double elapsed_time = 0;
     cerr << "Starts annealing...\n";
     while(elapsed_time + average_time < time_limit) {
         double normalized_time = elapsed_time / time_limit;
         double temp_current = pow(temp_start, 1.0 - normalized_time) * pow(temp_end, normalized_time);
         STATE current_state = STATE::generateState(best_state);
+        if(current_state.score > answer_state.score) {
+            answer_state = current_state;
+        }
         long long delta = current_state.score - best_state.score;
         if(delta > 0 || ryuka.pjudge(exp(1.0 * delta / temp_current)) ) {
             swap(best_state, current_state);
@@ -60,7 +64,7 @@ STATE IterationControl<STATE>::anneal(double time_limit, double temp_start, doub
         average_time = elapsed_time / iteration_counter;
     }
     cerr << "Iterated " << iteration_counter << " times and swapped " << swap_counter << " times.\n";
-    return best_state;
+    return answer_state;
 }
 
 #endif

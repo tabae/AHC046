@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <map>
+#include <algorithm>
 using namespace std;
 using ll = long long;
 
@@ -13,7 +14,7 @@ namespace common {
     vector<pair<int,int>> goals;
     void read();
     pair<int,int> dij(char dir);
-    pair<int,int> exec_operations(int, int, const vector<pair<char, char>>&, vector<vector<bool>>&, bool);
+    pair<int,int> exec_operations(int, int, const vector<pair<char, char>>&, vector<vector<bool>>&, bool, vector<pair<int,int>>&);
     inline ll calc_score(const vector<pair<char, char>>& operations);
 };
 
@@ -41,9 +42,12 @@ pair<int,int> common::dij(char dir) {
     }
 }
 
-pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char>>& operations, vector<vector<bool>>& is_block, bool change_is_block) {
+pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char>>& operations, 
+                                      vector<vector<bool>>& is_block, bool change_is_block,
+                                      vector<pair<int,int>>& used_block) {
     map<pair<int, int>, int> is_block_org;
     for(auto [act, dir]: operations) {
+        //cerr << "Executing operation: " << act << " " << dir << " (" << i << ", " << j << ")" << endl;
         if(act == 'M') {
             auto [di, dj] = common::dij(dir);
             int ni = i + di;
@@ -68,6 +72,7 @@ pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char
                     break;
                 }
                 if(is_block[ni][nj]) {
+                    used_block.push_back({ni, nj});
                     break;
                 }
                 i = ni;
@@ -81,8 +86,8 @@ pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char
                 cerr << "Out of bounds: (" << ni << ", " << nj << ")" << endl;
                 exit(1);
             }
-            if(!change_is_block && !is_block_org.count({i, j})) {
-                is_block_org[{i, j}] = is_block[ni][nj];
+            if(!change_is_block && !is_block_org.count({ni, nj})) {
+                is_block_org[{ni, nj}] = is_block[ni][nj];
             }
             is_block[ni][nj] = !is_block[ni][nj];
         }
@@ -92,18 +97,22 @@ pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char
             is_block[pos.first][pos.second] = val;
         }
     }
+    sort(used_block.begin(), used_block.end());
+    used_block.erase(unique(used_block.begin(), used_block.end()), used_block.end());
     return {i, j};
 }
 
 
 inline ll common::calc_score(const vector<pair<char, char>>& operations) {
+    //cerr << "Operations size = " << operations.size() << endl;
     ll score = 0;
     vector<vector<bool>> is_block(n, vector<bool>(n, false));
     auto [i, j] = goals[0];
     int goal_index = 1;
     int visited = 1;
     for(auto [act, dir]: operations) {
-        tie(i, j) = exec_operations(i, j, {{act, dir}}, is_block, true);
+        vector<pair<int,int>> _used_block;
+        tie(i, j) = exec_operations(i, j, {{act, dir}}, is_block, true, _used_block);
         if(goals[goal_index].first == i && goals[goal_index].second == j) {
             visited++;
             goal_index++;
