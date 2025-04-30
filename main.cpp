@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "annealer.hpp"
-#include "common.hpp"
-#include "state.hpp"
+#include "src/annealer.hpp"
+#include "src/common.hpp"
+#include "src/state.hpp"
 using namespace std;
 using namespace common;
 
