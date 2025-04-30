@@ -3,3 +3,6 @@
 .vscode/*
 
 tools/*
+combined.cpp
+a.out
+vis.html
