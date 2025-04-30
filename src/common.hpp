@@ -20,7 +20,7 @@ vector<pair<int, int>> goals;
 void read();
 pair<int, int> dij(char dir);
 int dir2idx(char dir);
-vector<pair<char, char>> solve(const vector<vector<bool>> &block_candidates);
+vector<pair<char, char>> solve(vector<vector<bool>> &block_candidates);
 inline ll calc_score(const vector<pair<char, char>> &operations,
                      bool check = false);
 };  // namespace common
@@ -57,7 +57,7 @@ int common::dir2idx(char dir) {
 }
 
 vector<pair<char, char>> common::solve(
-    const vector<vector<bool>> &block_candidates) {
+    vector<vector<bool>> &block_candidates) {
     vector<vector<bool>> block_map(n, vector<bool>(n, false));
 
     vector skate_stop(4, vector(n, vector<pair<int, int>>(n)));
@@ -222,6 +222,7 @@ vector<pair<char, char>> common::solve(
         auto ops_with_block = insert_block(si, sj, ops);
         ret.insert(ret.end(), ops_with_block.begin(), ops_with_block.end());
     }
+    block_candidates = block_map;
     return ret;
 }
 

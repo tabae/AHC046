@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "src/annealer.hpp"
-#include "src/common.hpp"
-#include "src/state.hpp"
+#include "annealer.hpp"
+#include "common.hpp"
+#include "state.hpp"
 using namespace std;
 using namespace common;
 
@@ -10,8 +10,8 @@ int main() {
     read();
 
     IterationControl<State> sera;
-    // State stat = sera.anneal(1.8, 100, 1, State::initState());
-    State stat = sera.climb(1.8, State::initState());
+    State stat = sera.anneal(1.8, 0.001, 0.0000001, State::initState());
+    // State stat = sera.climb(1.8, State::initState());
     // State stat = State::initState();
     // State stat = State::generateState(State::initState());
 
