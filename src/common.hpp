@@ -1,127 +1,240 @@
 #ifndef __COMMON_HPP__
 #define __COMMON_HPP__
 
-#include <iostream>
-#include <vector>
-#include <cmath>
-#include <map>
 #include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <iostream>
+#include <map>
+#include <queue>
+#include <vector>
 using namespace std;
 using ll = long long;
 
 namespace common {
-    int n, m;
-    vector<pair<int,int>> goals;
-    void read();
-    pair<int,int> dij(char dir);
-    pair<int,int> exec_operations(int, int, const vector<pair<char, char>>&, vector<vector<bool>>&, bool, vector<pair<int,int>>&);
-    inline ll calc_score(const vector<pair<char, char>>& operations);
-};
+const string dirs = "LRUD";
+
+int n, m;
+vector<pair<int, int>> goals;
+
+void read();
+pair<int, int> dij(char dir);
+int dir2idx(char dir);
+vector<pair<char, char>> solve(const vector<vector<bool>> &block_candidates);
+inline ll calc_score(const vector<pair<char, char>> &operations,
+                     bool check = false);
+};  // namespace common
 
 void common::read() {
     cin >> n >> m;
-    for(int i = 0; i < m; ++i) {
+    for (int i = 0; i < m; ++i) {
         int x, y;
         cin >> x >> y;
         goals.push_back({x, y});
     }
 }
 
-pair<int,int> common::dij(char dir) {
-    if(dir == 'L') {
+pair<int, int> common::dij(char dir) {
+    if (dir == 'L') {
         return {0, -1};
-    } else if(dir == 'R') {
+    } else if (dir == 'R') {
         return {0, 1};
-    } else if(dir == 'U') {
+    } else if (dir == 'U') {
         return {-1, 0};
-    } else if(dir == 'D') {
+    } else if (dir == 'D') {
         return {1, 0};
     } else {
-        cerr << "Invalid direction: " << dir << endl;
-        exit(1);
+        assert(false);
     }
 }
 
-pair<int,int> common::exec_operations(int i, int j, const vector<pair<char, char>>& operations, 
-                                      vector<vector<bool>>& is_block, bool change_is_block,
-                                      vector<pair<int,int>>& used_block) {
-    map<pair<int, int>, int> is_block_org;
-    for(auto [act, dir]: operations) {
-        //cerr << "Executing operation: " << act << " " << dir << " (" << i << ", " << j << ")" << endl;
-        if(act == 'M') {
-            auto [di, dj] = common::dij(dir);
-            int ni = i + di;
-            int nj = j + dj;
-            if(ni < 0 || ni >= n || nj < 0 || nj >= n) {
-                cerr << "Out of bounds: (" << ni << ", " << nj << ")" << endl;
-                cerr << "(i, j) = " << i << ", " << j << endl;
-                exit(1);
-            }
-            if(is_block[ni][nj]) {
-                cerr << "Blocked cell: (" << ni << ", " << nj << ")" << endl;
-                exit(1);
-            }
-            i = ni;
-            j = nj;
-        } else if(act == 'S') {
-            auto [di, dj] = common::dij(dir);
-            while(true) {
-                int ni = i + di;
-                int nj = j + dj;
-                if(ni < 0 || ni >= n || nj < 0 || nj >= n) {
-                    break;
-                }
-                if(is_block[ni][nj]) {
-                    break;
-                }
-                i = ni;
-                j = nj;
-            }
-        } else if(act == 'A') {
-            auto [di, dj] = common::dij(dir);
-            int ni = i + di;
-            int nj = j + dj;
-            if(ni < 0 || ni >= n || nj < 0 || nj >= n) {
-                cerr << "Out of bounds: (" << ni << ", " << nj << ")" << endl;
-                exit(1);
-            }
-            if(!change_is_block && !is_block_org.count({ni, nj})) {
-                is_block_org[{ni, nj}] = is_block[ni][nj];
-            }
-            is_block[ni][nj] = !is_block[ni][nj];
-        }
-    }
-    if(!change_is_block) {
-        for(auto [pos, val]: is_block_org) {
-            is_block[pos.first][pos.second] = val;
-        }
-    }
-    return {i, j};
+int common::dir2idx(char dir) {
+    if (dir == 'L') return 0;
+    if (dir == 'R') return 1;
+    if (dir == 'U') return 2;
+    if (dir == 'D') return 3;
+    assert(false);
 }
 
+vector<pair<char, char>> common::solve(
+    const vector<vector<bool>> &block_candidates) {
+    vector<vector<bool>> block_map(n, vector<bool>(n, false));
 
-inline ll common::calc_score(const vector<pair<char, char>>& operations) {
-    //cerr << "Operations size = " << operations.size() << endl;
-    ll score = 0;
-    vector<vector<bool>> is_block(n, vector<bool>(n, false));
-    auto [i, j] = goals[0];
-    int goal_index = 1;
-    int visited = 1;
-    for(auto [act, dir]: operations) {
-        vector<pair<int,int>> _used_block;
-        tie(i, j) = exec_operations(i, j, {{act, dir}}, is_block, true, _used_block);
-        if(goals[goal_index].first == i && goals[goal_index].second == j) {
-            visited++;
-            goal_index++;
+    vector skate_stop(4, vector(n, vector<pair<int, int>>(n)));
+    // initialize skate_stop
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++) {
+            skate_stop[0][i][j] = {i, 0};
+            skate_stop[1][i][j] = {i, n - 1};
+            skate_stop[2][i][j] = {0, j};
+            skate_stop[3][i][j] = {n - 1, j};
         }
+    auto update_skate_stop = [&](int block_i, int block_j) -> void {
+        for (int j = block_j + 1; j < n; j++) {
+            if (block_map[block_i][j]) break;
+            skate_stop[0][block_i][j] = {block_i, block_j + 1};
+        }
+        for (int j = block_j - 1; j >= 0; j--) {
+            if (block_map[block_i][j]) break;
+            skate_stop[1][block_i][j] = {block_i, block_j - 1};
+        }
+        for (int i = block_i + 1; i < n; i++) {
+            if (block_map[i][block_j]) break;
+            skate_stop[2][i][block_j] = {block_i + 1, block_j};
+        }
+        for (int i = block_i - 1; i >= 0; i--) {
+            if (block_map[i][block_j]) break;
+            skate_stop[3][i][block_j] = {block_i - 1, block_j};
+        }
+    };
+
+    auto bfs = [&](int si, int sj, int gi, int gj) -> vector<pair<char, char>> {
+        vector seen(n, vector<bool>(n, false));
+        vector prev(n,
+                    vector<tuple<int, int, char, char>>(n, {-1, -1, '?', '?'}));
+        queue<pair<int, int>> que;
+        que.push({si, sj});
+        seen[si][sj] = true;
+        while (!que.empty()) {
+            const auto [i, j] = que.front();
+            que.pop();
+            if (i == gi && j == gj) break;
+            for (char dir : dirs) {
+                const auto [di, dj] = dij(dir);
+                // move
+                {
+                    const int ni = i + di;
+                    const int nj = j + dj;
+                    if (ni < 0 || ni >= n || nj < 0 || nj >= n) continue;
+                    if (block_map[ni][nj]) continue;
+                    if (seen[ni][nj]) continue;
+                    seen[ni][nj] = true;
+                    prev[ni][nj] = {i, j, 'M', dir};
+                    que.push({ni, nj});
+                }
+                // skate
+                {
+                    const auto [ni, nj] = skate_stop[dir2idx(dir)][i][j];
+                    if (ni < 0 || ni >= n || nj < 0 || nj >= n) continue;
+                    if (block_map[ni][nj]) continue;
+                    if (seen[ni][nj]) continue;
+                    seen[ni][nj] = true;
+                    prev[ni][nj] = {i, j, 'S', dir};
+                    que.push({ni, nj});
+                }
+            }
+        }
+        if (!seen[gi][gj]) {
+            return {};
+        }
+        vector<pair<char, char>> ret;
+        int i = gi, j = gj;
+        while (i != si || j != sj) {
+            const auto [pi, pj, act, dir] = prev[i][j];
+            ret.push_back({act, dir});
+            i = pi;
+            j = pj;
+        }
+        reverse(ret.begin(), ret.end());
+        return ret;
+    };
+
+    auto insert_block =
+        [&](int si, int sj,
+            const vector<pair<char, char>> &ops) -> vector<pair<char, char>> {
+        vector<vector<int>> visit_counts(n, vector<int>(n, 0));
+        {
+            int i = si, j = sj;
+            visit_counts[i][j]++;
+            for (const auto [act, dir] : ops) {
+                int pi = i, pj = j;
+                if(act == 'M') {
+                    const auto [di, dj] = dij(dir);
+                    i += di;
+                    j += dj;
+                    visit_counts[i][j]++;
+                } else if (act == 'S') {
+                    tie(i, j) = skate_stop[dir2idx(dir)][i][j];
+                    if(dir == 'L') for(int tj = pj-1; tj >= j; tj--) {
+                        visit_counts[i][tj]++;
+                    }
+                    else if(dir == 'R') for(int tj = pj+1; tj <= j; tj++) {
+                        visit_counts[i][tj]++;
+                    }
+                    else if(dir == 'U') for(int ti = pi-1; ti >= i; ti--) {
+                        visit_counts[ti][j]++;
+                    }
+                    else if(dir == 'D') for(int ti = pi+1; ti <= i; ti++) {
+                        visit_counts[ti][j]++;
+                    }
+                }
+            }
+        }
+        vector<pair<char, char>> ret;
+        int i = si, j = sj;
+        for (const auto [act, dir] : ops) {
+            int pi = i, pj = j;
+            ret.push_back({act, dir});
+            if (act == 'M') {
+                const auto [di, dj] = dij(dir);
+                i += di;
+                j += dj;
+                visit_counts[i][j]--;
+            } else if (act == 'S') {
+                tie(i, j) = skate_stop[dir2idx(dir)][i][j];
+                if(dir == 'L') for(int tj = pj-1; tj >= j; tj--) {
+                    visit_counts[i][tj]--;
+                }
+                else if(dir == 'R') for(int tj = pj+1; tj <= j; tj++) {
+                    visit_counts[i][tj]--;
+                }
+                else if(dir == 'U') for(int ti = pi-1; ti >= i; ti--) {
+                    visit_counts[ti][j]--;
+                }
+                else if(dir == 'D') for(int ti = pi+1; ti <= i; ti++) {
+                    visit_counts[ti][j]--;
+                }
+            }
+            for (char dir : dirs) {
+                const auto [di, dj] = dij(dir);
+                const int ni = i + di;
+                const int nj = j + dj;
+                if (ni < 0 || ni >= n || nj < 0 || nj >= n) continue;
+                if (!block_candidates[ni][nj]) continue;
+                if (block_map[ni][nj]) continue;
+                if (visit_counts[ni][nj] > 0) continue;
+                block_map[ni][nj] = true;
+                update_skate_stop(ni, nj);
+                ret.push_back({'A', dir});
+            }
+        }
+        return ret;
+    };
+
+    vector<pair<char, char>> ret;
+    for (int goal = 1; goal < m; goal++) {
+        const auto [si, sj] = goals[goal - 1];
+        const auto [gi, gj] = goals[goal];
+        vector<pair<char, char>> ops = bfs(si, sj, gi, gj);
+        if (ops.empty()) {
+            return {};
+        }
+        auto ops_with_block = insert_block(si, sj, ops);
+        ret.insert(ret.end(), ops_with_block.begin(), ops_with_block.end());
     }
-    if(visited == m) {
-        score = m + 2*n*m - operations.size();
-    } else {
-        score = visited;
+    return ret;
+}
+
+inline ll common::calc_score(const vector<pair<char, char>> &operations,
+                             bool check) {
+    if (operations.empty()) {
+        return 0;
     }
-    // cerr << "visited = " << visited << endl;
-    return score;
+    if (!check) {
+        return m + 2 * n * m - operations.size();
+    }
+    cerr << "Not Implemented yet" << endl;
+    assert(false);
 }
 
 #endif
