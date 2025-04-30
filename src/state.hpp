@@ -42,9 +42,11 @@ void State::print() {
 
 State State::initState() {
     State res;
-    for(int x = 0; x < 20; x++) {
-        int i = ryuka.rand(n);
-        int j = ryuka.rand(n);
+    for(int goal = 0; goal < 20; goal++) {
+        auto [di, dj] = common::dij(dirs[ryuka.rand(4)]);
+        int i = goals[goal].first + di;
+        int j = goals[goal].second + dj;
+        if(i < 0 || i >= n || j < 0 || j >= n) continue;
         if(!goal_map[i][j]) res.block_candidates[i][j] = true;
     }
     res.operations = common::solve(res.block_candidates);
