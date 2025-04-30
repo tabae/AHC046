@@ -42,6 +42,11 @@ void State::print() {
 
 State State::initState() {
     State res;
+    for(int x = 0; x < 20; x++) {
+        int i = ryuka.rand(n);
+        int j = ryuka.rand(n);
+        if(!goal_map[i][j]) res.block_candidates[i][j] = true;
+    }
     res.operations = common::solve(res.block_candidates);
     res.calc_score(res.operations);
     return res;
@@ -50,32 +55,40 @@ State State::initState() {
 State State::generateState(const State &input_state) {
     State res;
     res.block_candidates = input_state.block_candidates;
-    int cmd = ryuka.rand(4);
-    if (1 <= cmd) {
-        vector<pair<int,int>> block_coordinates;
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
-                if (res.block_candidates[i][j]) {
-                    block_coordinates.push_back({i, j});
-                }
-            }
+    vector<pair<int, int>> blocks;
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
+            if(res.block_candidates[i][j]) blocks.push_back({i, j});
         }
-        if (block_coordinates.empty()) {
-            cmd = 0;
+    }
+    if(!blocks.empty()) {
+        int cmd = ryuka.rand(4);
+        if(cmd == 0) {
+            int i = ryuka.rand(n);
+            int j = ryuka.rand(n);
+            res.block_candidates[i][j] = !res.block_candidates[i][j];
+            res.operations = common::solve(res.block_candidates);
+        } else if(cmd == 1) {
+            int idx = ryuka.rand(blocks.size());
+            auto [i, j] = blocks[idx];
+            res.block_candidates[i][j] = false;
+            int ni = ryuka.rand(n);
+            int nj = ryuka.rand(n);
+            res.block_candidates[ni][nj] = true;
+            res.operations = common::solve(res.block_candidates);
         } else {
-            int idx = ryuka.rand(block_coordinates.size());
-            auto [i, j] = block_coordinates[idx];
+            int idx = ryuka.rand(blocks.size());
+            auto [i, j] = blocks[idx];
             auto [di, dj] = common::dij(dirs[ryuka.rand(4)]);
             int ni = clamp(i + di, 0, n - 1);
             int nj = clamp(j + dj, 0, n - 1);
             swap(res.block_candidates[i][j], res.block_candidates[ni][nj]);
             res.operations = common::solve(res.block_candidates);
         }
-    }
-    if (cmd == 0) {
+    } else {
         int i = ryuka.rand(n);
         int j = ryuka.rand(n);
-        res.block_candidates[i][j] = !res.block_candidates[i][j];
+        res.block_candidates[i][j] = true;
         res.operations = common::solve(res.block_candidates);
     }
     res.calc_score(res.operations);

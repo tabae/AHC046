@@ -10,7 +10,8 @@ int main() {
     read();
 
     IterationControl<State> sera;
-    State stat = sera.anneal(1.95, 0.001, 1e-6, State::initState());
+    State ini_stat = sera.climb(0.4, State::initState());
+    State stat = sera.anneal(1.95, 0.001, 1e-6, ini_stat);
     // State stat = sera.climb(1.8, State::initState());
     // State stat = State::initState();
     // State stat = State::generateState(State::initState());

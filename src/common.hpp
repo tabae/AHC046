@@ -16,6 +16,7 @@ const string dirs = "LRUD";
 
 int n, m;
 vector<pair<int, int>> goals;
+vector<vector<bool>> goal_map;
 double bfs_time = 0;
 
 void read();
@@ -28,10 +29,12 @@ inline ll calc_score(const vector<pair<char, char>> &operations,
 
 void common::read() {
     cin >> n >> m;
+    goal_map.resize(n, vector<bool>(n, false));
     for (int i = 0; i < m; ++i) {
         int x, y;
         cin >> x >> y;
         goals.push_back({x, y});
+        goal_map[x][y] = true;
     }
 }
 
@@ -219,6 +222,7 @@ vector<pair<char, char>> common::solve(
                 if (ni < 0 || ni >= n || nj < 0 || nj >= n) continue;
                 if (!block_candidates[ni][nj]) continue;
                 if (block_map[ni][nj]) continue;
+                if (goal_map[ni][nj]) continue;
                 if (visit_counts[ni][nj] > 0) continue;
                 block_map[ni][nj] = true;
                 update_skate_stop(ni, nj);
