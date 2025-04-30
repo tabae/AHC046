@@ -1,6 +1,6 @@
 # About
 
-Solving [AHCXXX](https://atcoder.jp/contests/ahc001/tasks/ahc001_a)
+Solving [AHC046](https://atcoder.jp/contests/ahc046/tasks/ahc046_a)
 
 # How to expand
 
