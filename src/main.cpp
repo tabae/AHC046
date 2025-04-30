@@ -10,11 +10,12 @@ int main() {
     read();
 
     IterationControl<State> sera;
-    State stat = sera.anneal(1.8, 0.001, 0.0000001, State::initState());
+    State stat = sera.anneal(1.95, 0.001, 1e-6, State::initState());
     // State stat = sera.climb(1.8, State::initState());
     // State stat = State::initState();
     // State stat = State::generateState(State::initState());
 
     stat.print();
     cerr << "my score = " << stat.score << endl;
+    cerr << "bfs_time = " << bfs_time << endl;
 }

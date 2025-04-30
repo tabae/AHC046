@@ -16,6 +16,7 @@ const string dirs = "LRUD";
 
 int n, m;
 vector<pair<int, int>> goals;
+double bfs_time = 0;
 
 void read();
 pair<int, int> dij(char dir);
@@ -88,17 +89,24 @@ vector<pair<char, char>> common::solve(
         }
     };
 
+    vector seen(n, vector<bool>(n, false));
+    vector prev(n,
+                vector<tuple<int, int, char, char>>(n, {-1, -1, '?', '?'}));
+
     auto bfs = [&](int si, int sj, int gi, int gj) -> vector<pair<char, char>> {
-        vector seen(n, vector<bool>(n, false));
-        vector prev(n,
-                    vector<tuple<int, int, char, char>>(n, {-1, -1, '?', '?'}));
+        auto start = toki.gettime();
+        for(int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                seen[i][j] = false;
+            }
+        }
         queue<pair<int, int>> que;
         que.push({si, sj});
         seen[si][sj] = true;
         while (!que.empty()) {
             const auto [i, j] = que.front();
             que.pop();
-            if (i == gi && j == gj) break;
+            bool break_flag = false;
             for (char dir : dirs) {
                 const auto [di, dj] = dij(dir);
                 // move
@@ -111,6 +119,7 @@ vector<pair<char, char>> common::solve(
                     seen[ni][nj] = true;
                     prev[ni][nj] = {i, j, 'M', dir};
                     que.push({ni, nj});
+                    break_flag |= (ni == gi && nj == gj);
                 }
                 // skate
                 {
@@ -121,8 +130,10 @@ vector<pair<char, char>> common::solve(
                     seen[ni][nj] = true;
                     prev[ni][nj] = {i, j, 'S', dir};
                     que.push({ni, nj});
+                    break_flag |= (ni == gi && nj == gj);
                 }
             }
+            if (break_flag) break;
         }
         if (!seen[gi][gj]) {
             return {};
@@ -136,14 +147,20 @@ vector<pair<char, char>> common::solve(
             j = pj;
         }
         reverse(ret.begin(), ret.end());
+        bfs_time += toki.gettime() - start;
         return ret;
     };
 
+    vector<vector<int>> visit_counts(n, vector<int>(n, 0));
     auto insert_block =
         [&](int si, int sj,
             const vector<pair<char, char>> &ops) -> vector<pair<char, char>> {
-        vector<vector<int>> visit_counts(n, vector<int>(n, 0));
         {
+            for(int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    visit_counts[i][j] = 0;
+                }
+            }
             int i = si, j = sj;
             visit_counts[i][j]++;
             for (const auto [act, dir] : ops) {
