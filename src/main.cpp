@@ -1,12 +1,12 @@
+#include <iostream>
+
+#include "annealer.hpp"
 #include "common.hpp"
 #include "state.hpp"
-#include "annealer.hpp"
-#include <iostream>
 using namespace std;
 using namespace common;
 
 int main() {
-
     read();
 
     IterationControl<State> sera;
@@ -17,5 +17,4 @@ int main() {
 
     stat.print();
     cerr << "my score = " << stat.score << endl;
-
 }
