@@ -124,6 +124,8 @@ vector<pair<char, char>> common::solve(
                     que.push({ni, nj});
                     break_flag |= (ni == gi && nj == gj);
                 }
+            }
+            for (char dir : dirs) {
                 // skate
                 {
                     const auto [ni, nj] = skate_stop[dir2idx(dir)][i][j];
