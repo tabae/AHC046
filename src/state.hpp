@@ -19,11 +19,16 @@ struct State {
     long long score;
     vector<pair<char, char>> operations;
     vector<vector<bool>> block_candidates;
+    long long rollback_score;
+    vector<pair<char, char>> rollback_operations;
+    vector<tuple<int,int,bool>> rollback_cache;
     State() : score(-inf) {
         block_candidates.resize(n, vector<bool>(n, false));
     };
     long long calc_score(const vector<pair<char, char>> &operations);
     void print();
+    void rollback();
+    void nextState();
     static State initState();
     static State generateState(const State &input_state);
 };
@@ -95,6 +100,63 @@ State State::generateState(const State &input_state) {
     }
     res.calc_score(res.operations);
     return res;
+}
+
+
+void State::nextState() {
+    rollback_cache.clear();
+    rollback_score = score;
+    rollback_operations = operations;
+    vector<pair<int, int>> blocks;
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
+            if(block_candidates[i][j]) blocks.push_back({i, j});
+        }
+    }
+    if(!blocks.empty()) {
+        int cmd = ryuka.rand(4);
+        if(cmd == 0) {
+            int i = ryuka.rand(n);
+            int j = ryuka.rand(n);
+            rollback_cache.push_back({i, j, block_candidates[i][j]});
+            block_candidates[i][j] = !block_candidates[i][j];
+            operations = common::solve(block_candidates);
+        } else if(cmd == 1) {
+            int idx = ryuka.rand(blocks.size());
+            auto [i, j] = blocks[idx];
+            rollback_cache.push_back({i, j, block_candidates[i][j]});
+            block_candidates[i][j] = false;
+            int ni = ryuka.rand(n);
+            int nj = ryuka.rand(n);
+            rollback_cache.push_back({ni, nj, block_candidates[ni][nj]});
+            block_candidates[ni][nj] = true;
+            operations = common::solve(block_candidates);
+        } else {
+            int idx = ryuka.rand(blocks.size());
+            auto [i, j] = blocks[idx];
+            auto [di, dj] = common::dij(dirs[ryuka.rand(4)]);
+            int ni = clamp(i + di, 0, n - 1);
+            int nj = clamp(j + dj, 0, n - 1);
+            rollback_cache.push_back({i, j, block_candidates[i][j]});
+            rollback_cache.push_back({ni, nj, block_candidates[ni][nj]});
+            swap(block_candidates[i][j], block_candidates[ni][nj]);
+            operations = common::solve(block_candidates);
+        }
+    } else {
+        int i = ryuka.rand(n);
+        int j = ryuka.rand(n);
+        block_candidates[i][j] = true;
+        operations = common::solve(block_candidates);
+    }
+    calc_score(operations);
+}
+
+void State::rollback() {
+    for(auto [i, j, b] : rollback_cache) {
+        block_candidates[i][j] = b;
+    }
+    operations = rollback_operations;
+    score = rollback_score;
 }
 
 #endif
